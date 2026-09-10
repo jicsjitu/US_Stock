@@ -1,13 +1,54 @@
 import requests
 import pandas as pd
+import hmac
+import hashlib
+import json
+import time
+import streamlit as st
+
+# Streamlit secrets se API aur Secret Key fetch karna
+try:
+    API_KEY = st.secrets["COINDCX_API_KEY"]
+    SECRET_KEY = st.secrets["COINDCX_SECRET_KEY"]
+except Exception as e:
+    st.error("API Keys Streamlit Secrets mein nahi mili! Kripya check karein.")
+    API_KEY = ""
+    SECRET_KEY = ""
 
 TICKER_URL = "https://api.coindcx.com/exchange/ticker"
 CANDLE_URL = "https://public.coindcx.com/market_data/candles"
 
+def get_auth_headers(body=None):
+    """CoinDCX ki security ke liye HMAC Signature generate karta hai"""
+    if body is None:
+        body = {}
+    
+    # Timestamp in milliseconds
+    time_stamp = int(round(time.time() * 1000))
+    body["timestamp"] = time_stamp
+    
+    json_body = json.dumps(body, separators=(',', ':'))
+    
+    # Signature create karna
+    signature = hmac.new(
+        SECRET_KEY.encode('utf-8'), 
+        json_body.encode('utf-8'), 
+        hashlib.sha256
+    ).hexdigest()
+
+    headers = {
+        'Content-Type': 'application/json',
+        'X-AUTH-APIKEY': API_KEY,
+        'X-AUTH-SIGNATURE': signature
+    }
+    return headers
+
 def get_futures_prices():
     """Sirf CoinDCX USDT Futures coins ke live prices fetch karega"""
     try:
-        response = requests.get(TICKER_URL)
+        # Hum headers pass kar rahe hain API verify karne ke liye
+        headers = get_auth_headers()
+        response = requests.get(TICKER_URL, headers=headers)
         data = response.json()
         
         # CoinDCX mein futures pairs 'B-' se shuru hote hain (e.g., B-BTC_USDT)
@@ -32,9 +73,9 @@ def get_futures_candles(pair, interval="1h", limit=100):
         response = requests.get(CANDLE_URL, params=params)
         data = response.json()
         
-        if not data or isinstance(data, dict): # Check if error response
-            # Fallback: Agar futures pair ka chart error de, toh spot chart use karein analysis ke liye
-            spot_pair = pair.replace("B-", "") # 'B-BTC_USDT' -> 'BTC_USDT'
+        if not data or isinstance(data, dict): 
+            # Fallback: Agar futures pair ka chart error de, toh spot chart use karein
+            spot_pair = pair.replace("B-", "") 
             params["pair"] = spot_pair
             response = requests.get(CANDLE_URL, params=params)
             data = response.json()

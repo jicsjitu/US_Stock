@@ -37,12 +37,29 @@ if st.button("🚀 Scan Futures Market") or auto_refresh:
         live_prices = get_futures_prices()
         
         # 2. Top liquid futures coins select kiye hain (aap ise badha sakte ho)
+        # Top 50+ High Volume US Stocks (Tech, AI, EV & Bluechip)
         top_futures_pairs = [
-            "B-BTC_USDT", "B-ETH_USDT", "B-SOL_USDT", "B-RUNE_USDT", 
-            "B-LINK_USDT", "B-DOGE_USDT", "B-XRP_USDT", "B-MATIC_USDT",
-            "B-ADA_USDT", "B-AVAX_USDT", "B-JUP_USDT", "B-STRK_USDT"
-        ]
-        
+            # 👑 The Magnificent Seven (Super High Volume)
+            "MSFT", "AAPL", "NVDA", "GOOGL", "META", "AMZN", "TSLA",
+
+            # 🤖 AI & Semiconductors (Current Hot Trend)
+            "AMD", "INTC", "TSM", "AVGO", "QCOM", "MU", "ARM", "SMCI", "PLTR",
+
+            # 🌐 Software, Cloud & Tech Giants
+            "ADBE", "CRM", "ORCL", "IBM", "CSCO", "NOW", "SNOW", "PANW", "CRWD",
+
+            # 🎬 Entertainment, Media & E-commerce
+            "NFLX", "DIS", "SPOT", "SHOP", "BABA", "PDD", "JD", "UBER", "ABNB",
+
+            # 💳 Fintech & Payments
+            "V", "MA", "PYPL", "SQ", "HOOD", "COIN",
+
+            # 💊 Healthcare & Biotech
+            "LLY", "NVO", "JNJ", "PFE", "MRNA",
+
+            # 🍔 Consumer, Retail & Auto (Non-EV)
+            "WMT", "COST", "MCD", "KO", "PEP", "F", "GM"
+        ] 
         for pair in top_futures_pairs:
             current_price = live_prices.get(pair, 0.0)
             

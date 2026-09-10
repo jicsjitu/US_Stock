@@ -73,5 +73,5 @@ if st.button("🚀 Scan Futures Market") or auto_refresh:
                     """, unsafe_allow_html=True)
 
     if auto_refresh:
-        time.sleep(60)
+        time.sleep(180)
         st.rerun()

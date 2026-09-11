@@ -10,7 +10,7 @@ def analyze_futures(df, live_price):
     df['ema_9'] = ta.trend.EMAIndicator(df['close'], window=9).ema_indicator()
     df['ema_21'] = ta.trend.EMAIndicator(df['close'], window=21).ema_indicator()
     
-    # ATR for Dynamic Stoploss (Volatility map karta hai)
+    # ATR for Volatility
     df['atr'] = ta.volatility.AverageTrueRange(df['high'], df['low'], df['close'], window=14).average_true_range()
 
     current_rsi = df['rsi'].iloc[-1]
@@ -29,21 +29,14 @@ def analyze_futures(df, live_price):
         signal = "SELL TREND"
         logic = "EMA Bearish Cross"
 
-    # Futures Target & Stop Loss Logic (Using ATR instead of fixed %)
-    # Yeh aapko liquidations se bachayega
-    if signal == "BUY TREND":
-        sl = live_price - (atr * 1.5)       # SL 1.5x of ATR
-        target = live_price + (atr * 3.0)   # Target 3x of ATR (1:2 RR)
-    elif signal == "SELL TREND":
-        sl = live_price + (atr * 1.5)
-        target = live_price - (atr * 3.0)
-    else:
-        sl, target = 0, 0
+    # 🚀 NEW: Points to Capture System (ATR based)
+    sl_points = atr * 1.5       # Stoploss points
+    target_points = atr * 3.0   # Target points (1:2 Risk-Reward)
 
     return {
         "signal": signal,
         "rsi": round(current_rsi, 1),
         "logic": logic,
-        "sl": round(sl, 4) if sl > 0 else 0,
-        "target": round(target, 4) if target > 0 else 0
+        "sl_points": round(sl_points, 4) if sl_points > 0 else 0,
+        "target_points": round(target_points, 4) if target_points > 0 else 0
     }

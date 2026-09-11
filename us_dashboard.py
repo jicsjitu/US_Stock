@@ -82,7 +82,6 @@ if scan_btn or st.session_state.scanned_results is None:
         
         st.session_state.scanned_results = results
 
-
 # STEP 2: Render Screenshot-Style UI
 if st.session_state.scanned_results is not None:
     stocks_found = 0
@@ -112,10 +111,9 @@ if st.session_state.scanned_results is not None:
         risk_amount = capital * 0.02 
         safe_quantity = round(risk_amount / analysis['sl_points'], 4) if analysis['sl_points'] > 0 else 0
 
-        # Rendering Card matching your exact screenshot structure
+        # Rendering Card (HTML BUG FIXED: Removed empty lines so Streamlit doesn't break)
         st.markdown(f"""
         <div class="metric-card {card_class}">
-            <!-- TOP ROW -->
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="width:15%;"><div class="col-header">PAIR</div><div class="col-val" style="color:#ffb300;">{pair}</div></div>
                 <div style="width:15%;"><div class="col-header">YAHOO PRICE</div><div class="col-val">${current_price} ➔</div></div>
@@ -124,10 +122,7 @@ if st.session_state.scanned_results is not None:
                 <div style="width:10%;"><div class="col-header">SCORE</div><div class="col-val">{analysis['score']}</div></div>
                 <div style="width:25%;"><div class="col-header">ANALYSIS REASON</div><div class="col-val" style="color:#aaa; font-weight:normal;">{analysis['logic']}</div></div>
             </div>
-            
             <div class="divider"></div>
-            
-            <!-- BOTTOM ROW -->
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="width:25%;"><div class="col-header">ENTRY RANGE</div><div class="col-val" style="font-size:12px; color:#888;">{analysis['entry_range']}</div></div>
                 <div style="width:20%;"><div class="col-header">TARGET MOVEMENT</div><div class="col-val" style="color:#00e676;">+{analysis['target_points']} Pts</div></div>
@@ -137,24 +132,26 @@ if st.session_state.scanned_results is not None:
         </div>
         """, unsafe_allow_html=True)
 
-        # 🧮 CoinDCX Sync Calculator (Still here, untouched functionality!)
-        if "TREND" in analysis['signal']:
-            with st.expander(f"🧮 Calculator: Sync exact levels for {pair} on CoinDCX"):
-                st.markdown("<div class='calc-box'>", unsafe_allow_html=True)
-                
-                cdcx_input = st.number_input(f"Enter current {pair} price from CoinDCX App:", value=float(current_price), format="%.2f", key=f"calc_{pair}")
-                
-                if "BUY" in analysis['signal']:
-                    exact_target = cdcx_input + analysis['target_points']
-                    exact_sl = cdcx_input - analysis['sl_points']
-                    st.success(f"📈 **COINDCX LONG ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
-                
-                elif "SELL" in analysis['signal']:
-                    exact_target = cdcx_input - analysis['target_points']
-                    exact_sl = cdcx_input + analysis['sl_points']
-                    st.error(f"📉 **COINDCX SHORT ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
-                
-                st.markdown("</div>", unsafe_allow_html=True)
+        # 🧮 CoinDCX Sync Calculator (BUG FIXED: Always visible now)
+        with st.expander(f"🧮 Calculator: Sync exact levels for {pair} on CoinDCX"):
+            st.markdown("<div class='calc-box'>", unsafe_allow_html=True)
+            
+            cdcx_input = st.number_input(f"Enter current {pair} price from CoinDCX App:", value=float(current_price), format="%.2f", key=f"calc_{pair}")
+            
+            if "BUY" in analysis['signal']:
+                exact_target = cdcx_input + analysis['target_points']
+                exact_sl = cdcx_input - analysis['sl_points']
+                st.success(f"📈 **COINDCX LONG ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
+            
+            elif "SELL" in analysis['signal']:
+                exact_target = cdcx_input - analysis['target_points']
+                exact_sl = cdcx_input + analysis['sl_points']
+                st.error(f"📉 **COINDCX SHORT ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
+            
+            else:
+                st.warning(f"⏳ **MARKET SIDEWAYS:** Abhi {pair} range mein fasa hua hai. Koi bhi entry lena risky ho sakta hai, trend clear hone ka wait karein!")
+            
+            st.markdown("</div>", unsafe_allow_html=True)
                 
     if stocks_found == 0:
         st.warning("⚠️ Koi trade current filter match nahi kar raha hai.")

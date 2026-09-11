@@ -84,7 +84,7 @@ if scan_btn or st.session_state.scanned_results is None:
         # 🚀 Saare High-Volume Profitable Pairs jo screenshots mein hain
         top_futures_pairs = [
             # Indices & Top Majors
-            "NSDQ100", "S&P500", "SKHX", "SPCX", "SNDK", "MU", "DRAM", "SKHY", "SMSN",
+            "NSDQ100", "S&P500", "SKHX", "SPCX", "SNDK", "DRAM", "SKHY", "SMSN",
             # Mega-Cap Tech & AI Giants
             "MSFT", "TSLA", "AMZN", "AMD", "NVDA", "GOOGL", "META", "APPL",
             # High Momentum & Trending Volatiles

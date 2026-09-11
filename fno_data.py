@@ -44,24 +44,22 @@ def get_auth_headers(body=None):
     return headers
 
 def get_futures_prices():
-    """Sirf CoinDCX USDT Futures coins ke live prices fetch karega"""
+    """CoinDCX se saare live prices fetch karega (Bina B- filter ke)"""
     try:
-        # Hum headers pass kar rahe hain API verify karne ke liye
-        headers = get_auth_headers()
-        response = requests.get(TICKER_URL, headers=headers)
+        # Ticker ke liye normal public request kaafi hai
+        response = requests.get(TICKER_URL)
         data = response.json()
         
-        # CoinDCX mein futures pairs 'B-' se shuru hote hain (e.g., B-BTC_USDT)
         prices = {}
         for item in data:
-            if item['market'].startswith('B-') and 'USDT' in item['market']:
-                prices[item['market']] = float(item['last_price'])
+            # Ab hum saare pairs ka data save kar lenge
+            prices[item['market']] = float(item['last_price'])
                 
         return prices
     except Exception as e:
         print(f"Price Fetch Error: {e}")
         return {}
-
+        
 def get_futures_candles(pair, interval="1h", limit=100):
     """Futures coins ka chart data layega"""
     params = {

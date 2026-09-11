@@ -61,33 +61,43 @@ if st.button("🚀 Scan Futures Market") or auto_refresh:
             "WMT", "COST", "MCD", "KO", "PEP", "F", "GM"
         ] 
         for pair in top_futures_pairs:
-            current_price = live_prices.get(pair, 0.0)
+            current_price = 0.0
+            api_pair_name = pair 
+            
+            # Smart Matching: API ke data mein stock ka sahi naam dhundhna
+            for api_key in live_prices.keys():
+                if pair in api_key and ('USDT' in api_key or 'USD' in api_key):
+                    current_price = live_prices[api_key]
+                    api_pair_name = api_key
+                    break
             
             if current_price > 0:
-                df = get_futures_candles(pair, interval=timeframe)
-                analysis = analyze_futures(df, current_price)
+                # Candle data mangwana correct API pair name ke sath
+                df = get_futures_candles(api_pair_name, interval=timeframe)
                 
-                if analysis and (filter_sig == "All" or filter_sig == analysis['signal']):
-                    # UI Rendering
-                    color_hex = "#00FF00" if analysis['signal'] == "BUY TREND" else ("#FF0000" if analysis['signal'] == "SELL TREND" else "#FFA500")
+                if df is not None and not df.empty:
+                    analysis = analyze_futures(df, current_price)
                     
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <div><small style="color:gray;">FUTURES PAIR</small><br><b>{pair.replace('B-', '').replace('_', '/')}</b></div>
-                            <div><small style="color:gray;">LIVE PRICE</small><br><b>${current_price}</b></div>
-                            <div><small style="color:gray;">SIGNAL</small><br><span style="color:{color_hex};"><b>{analysis['signal']}</b></span></div>
-                            <div><small style="color:gray;">RSI</small><br><b>{analysis['rsi']}</b></div>
-                            <div><small style="color:gray;">STRATEGY</small><br><b>{analysis['logic']}</b></div>
+                    if analysis and (filter_sig == "All" or filter_sig == analysis['signal']):
+                        color_hex = "#00FF00" if analysis['signal'] == "BUY TREND" else ("#FF0000" if analysis['signal'] == "SELL TREND" else "#FFA500")
+                        
+                        st.markdown(f"""
+                        <div class="metric-card">
+                            <div style="display:flex; justify-content:space-between;">
+                                <div><small style="color:gray;">US STOCK</small><br><b>{pair}</b></div>
+                                <div><small style="color:gray;">LIVE PRICE</small><br><b>${current_price}</b></div>
+                                <div><small style="color:gray;">SIGNAL</small><br><span style="color:{color_hex};"><b>{analysis['signal']}</b></span></div>
+                                <div><small style="color:gray;">RSI</small><br><b>{analysis['rsi']}</b></div>
+                                <div><small style="color:gray;">STRATEGY</small><br><b>{analysis['logic']}</b></div>
+                            </div>
+                            <hr style="border-color:#333;">
+                            <div style="display:flex; justify-content:space-between; font-size: 14px;">
+                                <div><small style="color:gray;">TARGET:</small> <span style="color:#00FF00;">${analysis['target']}</span></div>
+                                <div><small style="color:gray;">STOP-LOSS:</small> <span style="color:#FF0000;">${analysis['sl']}</span></div>
+                                <div><small style="color:gray;">R:R RATIO:</small> 1:2</div>
+                            </div>
                         </div>
-                        <hr style="border-color:#333;">
-                        <div style="display:flex; justify-content:space-between; font-size: 14px;">
-                            <div><small style="color:gray;">LEVERAGE TGT:</small> <span style="color:#00FF00;">${analysis['target']}</span></div>
-                            <div><small style="color:gray;">ATR STOP-LOSS:</small> <span style="color:#FF0000;">${analysis['sl']}</span></div>
-                            <div><small style="color:gray;">R:R RATIO:</small> 1:2</div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
     if auto_refresh:
         time.sleep(180)

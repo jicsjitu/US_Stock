@@ -119,7 +119,12 @@ def analyze_futures(df, live_price, pro_mode=False):
     entry_buffer = atr * 0.15
     entry_min = live_price - entry_buffer
     entry_max = live_price + entry_buffer
-
+    
+# Agar Wait signal hai, toh target/sl zero kar do taaki confusion na ho
+    if "WAIT" in signal:
+        sl_points = 0
+        target_points = 0
+        
     return {
         "signal": signal,
         "rsi": round(current_rsi, 1),

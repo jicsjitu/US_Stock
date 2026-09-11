@@ -25,7 +25,7 @@ st.markdown("""
     .card-buy { border-left: 4px solid #00e676; }
     .card-sell { border-left: 4px solid #ff1744; }
     .card-wait { border-left: 4px solid #ffb300; }
-    .card-sniper { border-left: 4px solid #9c27b0; box-shadow: 0px 0px 20px rgba(156, 39, 176, 0.4); } /* Purple Glow for Sniper Mode */
+    .card-sniper { border-left: 4px solid #9c27b0; box-shadow: 0px 0px 20px rgba(156, 39, 176, 0.4); } 
     .calc-box { background-color: #2b2b2b; padding: 10px; border-radius: 5px; margin-top: 10px; }
     .col-header { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;}
     .col-val { color: #fff; font-size: 14px; font-weight: bold; }
@@ -33,14 +33,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Top Bar Filters (Clean & Compact with Toggle)
+# Top Bar Filters
 col1, col2, col3, col4, col5 = st.columns([1.2, 1.2, 1.2, 1.6, 2.0])
 with col1: timeframe = st.selectbox("TIMEFRAME", ["1h", "4h", "15m", "5m"])
 with col2: filter_sig = st.selectbox("FILTER SIGNAL", ["All", "BUY", "SELL", "WAIT"])
 with col3: capital = st.number_input("CAPITAL (USDT)", value=1000, step=100)
 with col4: 
-    st.write("") # Spacer align karne ke liye
-    # 🎯 THE MAGIC TOGGLE
+    st.write("") 
     pro_mode = st.toggle("🔥 Sniper Mode", value=st.session_state.pro_mode_state)
 with col5: 
     st.write("")
@@ -48,12 +47,11 @@ with col5:
     with sub_col1: auto_refresh = st.checkbox("✅ Auto-Refresh", value=True)
     with sub_col2: scan_btn = st.button("🚀 Scan Markets")
 
-# Mode Change Check (Jaise hi Toggle click hoga, Memory clear hokar auto-rescan maarega)
 if pro_mode != st.session_state.pro_mode_state:
     st.session_state.pro_mode_state = pro_mode
     st.session_state.scanned_results = None 
 
-# ⏳ TIMER SCRIPT (Middle / Right aligned)
+# ⏳ TIMER SCRIPT
 if auto_refresh:
     components.html(
         """
@@ -76,11 +74,11 @@ if auto_refresh:
         """,
         height=30
     )
-st.write("") # Spacer
+st.write("") 
 
 # STEP 1: Fetch Logic
 if scan_btn or st.session_state.scanned_results is None:
-    with st.spinner("Running Advanced Backend Analysis..."):
+    with st.spinner("Running Advanced Macro & Volume Engine..."):
         live_prices = get_futures_prices()
         top_futures_pairs = ["NSDQ100", "S&P500", "SKHX", "SPCX", "SNDK", "MU", "DRAM", "SKHY", "SMSN"] 
         
@@ -90,14 +88,13 @@ if scan_btn or st.session_state.scanned_results is None:
             if current_price > 0:
                 df = get_futures_candles(pair, interval=timeframe, limit=150) 
                 if df is not None and not df.empty:
-                    # ✅ Pro Mode ka button ab AI engine ko signal bhej raha hai
                     analysis = analyze_futures(df, current_price, pro_mode=pro_mode)
                     if analysis:
                         results.append({"pair": pair, "current_price": current_price, "analysis": analysis})
         
         st.session_state.scanned_results = results
 
-# STEP 2: Render Screenshot-Style UI
+# STEP 2: Render UI
 if st.session_state.scanned_results is not None:
     stocks_found = 0
     
@@ -106,17 +103,15 @@ if st.session_state.scanned_results is not None:
         current_price = item["current_price"]
         analysis = item["analysis"]
         
-        # Determine styling and filtering
         sig_str = analysis['signal']
         if filter_sig != "All" and filter_sig not in sig_str:
             continue
             
         stocks_found += 1
         
-        # Color Styling Based on Active Mode
         if "SUPER" in sig_str: 
             card_class = "card-sniper"
-            color_hex = "#9c27b0" # Violet / Purple color for Heavy Breakouts
+            color_hex = "#9c27b0" 
         elif "BUY" in sig_str: 
             card_class = "card-buy"
             color_hex = "#00e676"
@@ -129,8 +124,8 @@ if st.session_state.scanned_results is not None:
             
         risk_amount = capital * 0.02 
         safe_quantity = round(risk_amount / analysis['sl_points'], 4) if analysis['sl_points'] > 0 else 0
+        trail_sl_pts = analysis.get('trail_sl', 0)
 
-        # Rendering Card (HTML BUG FIXED: Removed empty lines)
         st.markdown(f"""
         <div class="metric-card {card_class}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -143,15 +138,16 @@ if st.session_state.scanned_results is not None:
             </div>
             <div class="divider"></div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="width:25%;"><div class="col-header">ENTRY RANGE</div><div class="col-val" style="font-size:12px; color:#888;">{analysis['entry_range']}</div></div>
-                <div style="width:20%;"><div class="col-header">TARGET MOVEMENT</div><div class="col-val" style="color:#00e676;">+{analysis['target_points']} Pts</div></div>
-                <div style="width:20%;"><div class="col-header">SL MOVEMENT</div><div class="col-val" style="color:#ff1744;">-{analysis['sl_points']} Pts</div></div>
-                <div style="width:20%;"><div class="col-header">SAFE QTY (2% RISK)</div><div class="col-val">{safe_quantity} Units</div></div>
+                <div style="width:20%;"><div class="col-header">ENTRY RANGE</div><div class="col-val" style="font-size:12px; color:#888;">{analysis['entry_range']}</div></div>
+                <div style="width:18%;"><div class="col-header">TARGET MOVEMENT</div><div class="col-val" style="color:#00e676;">+{analysis['target_points']} Pts</div></div>
+                <div style="width:18%;"><div class="col-header">SL MOVEMENT</div><div class="col-val" style="color:#ff1744;">-{analysis['sl_points']} Pts</div></div>
+                <div style="width:18%;"><div class="col-header">TRAIL-SL</div><div class="col-val" style="color:#00bcd4;">{trail_sl_pts} Pts</div></div>
+                <div style="width:16%;"><div class="col-header">SAFE QTY (2%)</div><div class="col-val">{safe_quantity} Units</div></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # 🧮 CoinDCX Sync Calculator (Always stays untouched and perfect)
+        # Calculator
         with st.expander(f"🧮 Calculator: Sync exact levels for {pair} on CoinDCX"):
             st.markdown("<div class='calc-box'>", unsafe_allow_html=True)
             
@@ -160,12 +156,13 @@ if st.session_state.scanned_results is not None:
             if "BUY" in analysis['signal']:
                 exact_target = cdcx_input + analysis['target_points']
                 exact_sl = cdcx_input - analysis['sl_points']
-                st.success(f"📈 **COINDCX LONG ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
+                exact_trail = cdcx_input + trail_sl_pts if trail_sl_pts > 0 else 0
+                st.success(f"📈 **COINDCX LONG ENTRY SETTINGS:**\n\nTarget: **${round(exact_target, 2)}** | Stop-Loss: **${round(exact_sl, 2)}** | Trail-SL Buffer: **{trail_sl_pts} Pts**")
             
             elif "SELL" in analysis['signal']:
                 exact_target = cdcx_input - analysis['target_points']
                 exact_sl = cdcx_input + analysis['sl_points']
-                st.error(f"📉 **COINDCX SHORT ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
+                st.error(f"📉 **COINDCX SHORT ENTRY SETTINGS:**\n\nTarget: **${round(exact_target, 2)}** | Stop-Loss: **${round(exact_sl, 2)}** | Trail-SL Buffer: **{trail_sl_pts} Pts**")
             
             else:
                 st.warning(f"⏳ **MARKET ACCUMULATION:** Abhi {pair} range mein fasa hua hai. Koi bhi entry lena risky ho sakta hai, trend clear hone ka wait karein!")
@@ -175,7 +172,6 @@ if st.session_state.scanned_results is not None:
     if stocks_found == 0:
         st.warning("⚠️ Koi trade current filter match nahi kar raha hai.")
 
-    # Auto Refresh Safety loop
     if auto_refresh:
-        time.sleep(185) # slightly higher than JS timer to ensure JS reloads first
+        time.sleep(185) 
         st.rerun()

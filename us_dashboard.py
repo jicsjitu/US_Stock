@@ -16,10 +16,11 @@ st.markdown("""
     }
     .buy-signal { color: #00FF00; font-weight: bold; }
     .sell-signal { color: #FF0000; font-weight: bold; }
+    .calc-box { background-color: #2b2b2b; padding: 10px; border-radius: 5px; margin-top: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ Global Futures Scanner (CoinDCX Pairs)")
+st.title("⚡ Global Futures Scanner (CoinDCX Sync)")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -29,14 +30,12 @@ with col2:
 with col3:
     auto_refresh = st.checkbox("Auto-Refresh (3 Min)", value=False)
 with col4:
-    capital = st.number_input("CAPITAL REQ (USDT)", value=1000)
+    capital = st.number_input("CAPITAL REQ (USDT)", value=1000, step=100)
 
 if st.button("🚀 Scan Global Markets") or auto_refresh:
     with st.spinner("Analyzing Global Futures & Indices..."):
-        # 1. Fetch live prices directly from updated fno_data
         live_prices = get_futures_prices()
         
-        # 2. Tumhare Screenshot wale exact Global Futures pairs
         top_futures_pairs = [
             "NSDQ100", "S&P500", "SKHX", "SPCX", 
             "SNDK", "MU", "DRAM", "SKHY", "SMSN"
@@ -45,7 +44,6 @@ if st.button("🚀 Scan Global Markets") or auto_refresh:
         stocks_found = 0
 
         for pair in top_futures_pairs:
-            # Ab humein koi loop lagakar match nahi karna, direct naam se price mil jayegi
             current_price = live_prices.get(pair, 0.0)
             
             if current_price > 0:
@@ -58,23 +56,48 @@ if st.button("🚀 Scan Global Markets") or auto_refresh:
                     if analysis and (filter_sig == "All" or filter_sig == analysis['signal']):
                         color_hex = "#00FF00" if analysis['signal'] == "BUY TREND" else ("#FF0000" if analysis['signal'] == "SELL TREND" else "#FFA500")
                         
+                        # 🚀 Position Sizing Logic (2% Risk Rule)
+                        risk_amount = capital * 0.02 # Safe trading rule: Risk only 2% per trade
+                        safe_quantity = 0
+                        if analysis['sl_points'] > 0:
+                            safe_quantity = round(risk_amount / analysis['sl_points'], 4)
+
+                        # UI Rendering
                         st.markdown(f"""
                         <div class="metric-card">
                             <div style="display:flex; justify-content:space-between;">
                                 <div><small style="color:gray;">GLOBAL ASSET</small><br><b>{pair}</b></div>
-                                <div><small style="color:gray;">LIVE PRICE</small><br><b>${current_price}</b></div>
+                                <div><small style="color:gray;">YAHOO PRICE</small><br><b>${current_price}</b></div>
                                 <div><small style="color:gray;">SIGNAL</small><br><span style="color:{color_hex};"><b>{analysis['signal']}</b></span></div>
                                 <div><small style="color:gray;">RSI</small><br><b>{analysis['rsi']}</b></div>
                                 <div><small style="color:gray;">STRATEGY</small><br><b>{analysis['logic']}</b></div>
                             </div>
                             <hr style="border-color:#333;">
                             <div style="display:flex; justify-content:space-between; font-size: 14px;">
-                                <div><small style="color:gray;">TARGET:</small> <span style="color:#00FF00;">${analysis['target']}</span></div>
-                                <div><small style="color:gray;">STOP-LOSS:</small> <span style="color:#FF0000;">${analysis['sl']}</span></div>
-                                <div><small style="color:gray;">R:R RATIO:</small> 1:2</div>
+                                <div><small style="color:gray;">TARGET MOVEMENT:</small> <span style="color:#00FF00;"><b>+{analysis['target_points']} Pts</b></span></div>
+                                <div><small style="color:gray;">STOP-LOSS MOVEMENT:</small> <span style="color:#FF0000;"><b>-{analysis['sl_points']} Pts</b></span></div>
+                                <div><small style="color:gray;">SAFE QUANTITY (2% Risk):</small> <b style="color:#FFD700;">{safe_quantity} Units</b></div>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
+
+                        # 🚀 The Magic Calculator
+                        if analysis['signal'] in ["BUY TREND", "SELL TREND"]:
+                            with st.expander(f"🧮 Calculator: Sync exact levels for {pair} on CoinDCX"):
+                                st.markdown("<div class='calc-box'>", unsafe_allow_html=True)
+                                cdcx_input = st.number_input(f"Enter current {pair} price from CoinDCX App:", value=float(current_price), format="%.2f", key=f"calc_{pair}")
+                                
+                                if analysis['signal'] == "BUY TREND":
+                                    exact_target = cdcx_input + analysis['target_points']
+                                    exact_sl = cdcx_input - analysis['sl_points']
+                                    st.success(f"📈 **COINDCX LONG ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
+                                
+                                elif analysis['signal'] == "SELL TREND":
+                                    exact_target = cdcx_input - analysis['target_points']
+                                    exact_sl = cdcx_input + analysis['sl_points']
+                                    st.error(f"📉 **COINDCX SHORT ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
+                                
+                                st.markdown("</div>", unsafe_allow_html=True)
         
         if stocks_found == 0:
             st.error("⚠️ Data fetch nahi ho paya. Ek baar check karo ki fno_data.py mein yfinance theek se chal raha hai ya nahi.")

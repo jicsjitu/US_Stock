@@ -9,6 +9,8 @@ st.set_page_config(page_title="Pro Algo Desk", layout="wide", initial_sidebar_st
 # 🧠 STREAMLIT MEMORY
 if "scanned_results" not in st.session_state:
     st.session_state.scanned_results = None
+if "pro_mode_state" not in st.session_state:
+    st.session_state.pro_mode_state = False
 
 # Custom CSS matching exactly your screenshots
 st.markdown("""
@@ -23,6 +25,7 @@ st.markdown("""
     .card-buy { border-left: 4px solid #00e676; }
     .card-sell { border-left: 4px solid #ff1744; }
     .card-wait { border-left: 4px solid #ffb300; }
+    .card-sniper { border-left: 4px solid #9c27b0; box-shadow: 0px 0px 20px rgba(156, 39, 176, 0.4); } /* Purple Glow for Sniper Mode */
     .calc-box { background-color: #2b2b2b; padding: 10px; border-radius: 5px; margin-top: 10px; }
     .col-header { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;}
     .col-val { color: #fff; font-size: 14px; font-weight: bold; }
@@ -30,13 +33,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Top Bar Filters (Clean & Compact)
-col1, col2, col3, col4, col5 = st.columns([1.5, 1.5, 1.5, 1.5, 2])
+# Top Bar Filters (Clean & Compact with Toggle)
+col1, col2, col3, col4, col5 = st.columns([1.2, 1.2, 1.2, 1.6, 2.0])
 with col1: timeframe = st.selectbox("TIMEFRAME", ["1h", "4h", "15m", "5m"])
 with col2: filter_sig = st.selectbox("FILTER SIGNAL", ["All", "BUY", "SELL", "WAIT"])
 with col3: capital = st.number_input("CAPITAL (USDT)", value=1000, step=100)
-with col4: auto_refresh = st.checkbox("✅ Auto-Refresh (3 Min)", value=True)
-with col5: scan_btn = st.button("🚀 Scan Markets")
+with col4: 
+    st.write("") # Spacer align karne ke liye
+    # 🎯 THE MAGIC TOGGLE
+    pro_mode = st.toggle("🔥 Sniper Mode", value=st.session_state.pro_mode_state)
+with col5: 
+    st.write("")
+    sub_col1, sub_col2 = st.columns([1, 1])
+    with sub_col1: auto_refresh = st.checkbox("✅ Auto-Refresh", value=True)
+    with sub_col2: scan_btn = st.button("🚀 Scan Markets")
+
+# Mode Change Check (Jaise hi Toggle click hoga, Memory clear hokar auto-rescan maarega)
+if pro_mode != st.session_state.pro_mode_state:
+    st.session_state.pro_mode_state = pro_mode
+    st.session_state.scanned_results = None 
 
 # ⏳ TIMER SCRIPT (Middle / Right aligned)
 if auto_refresh:
@@ -65,7 +80,7 @@ st.write("") # Spacer
 
 # STEP 1: Fetch Logic
 if scan_btn or st.session_state.scanned_results is None:
-    with st.spinner("Running 4-Layer Backend Analysis..."):
+    with st.spinner("Running Advanced Backend Analysis..."):
         live_prices = get_futures_prices()
         top_futures_pairs = ["NSDQ100", "S&P500", "SKHX", "SPCX", "SNDK", "MU", "DRAM", "SKHY", "SMSN"] 
         
@@ -73,10 +88,10 @@ if scan_btn or st.session_state.scanned_results is None:
         for pair in top_futures_pairs:
             current_price = live_prices.get(pair, 0.0)
             if current_price > 0:
-                # Fetch slightly more data for EMA 50 to work properly
                 df = get_futures_candles(pair, interval=timeframe, limit=150) 
                 if df is not None and not df.empty:
-                    analysis = analyze_futures(df, current_price)
+                    # ✅ Pro Mode ka button ab AI engine ko signal bhej raha hai
+                    analysis = analyze_futures(df, current_price, pro_mode=pro_mode)
                     if analysis:
                         results.append({"pair": pair, "current_price": current_price, "analysis": analysis})
         
@@ -98,7 +113,11 @@ if st.session_state.scanned_results is not None:
             
         stocks_found += 1
         
-        if "BUY" in sig_str: 
+        # Color Styling Based on Active Mode
+        if "SUPER" in sig_str: 
+            card_class = "card-sniper"
+            color_hex = "#9c27b0" # Violet / Purple color for Heavy Breakouts
+        elif "BUY" in sig_str: 
             card_class = "card-buy"
             color_hex = "#00e676"
         elif "SELL" in sig_str: 
@@ -111,7 +130,7 @@ if st.session_state.scanned_results is not None:
         risk_amount = capital * 0.02 
         safe_quantity = round(risk_amount / analysis['sl_points'], 4) if analysis['sl_points'] > 0 else 0
 
-        # Rendering Card (HTML BUG FIXED: Removed empty lines so Streamlit doesn't break)
+        # Rendering Card (HTML BUG FIXED: Removed empty lines)
         st.markdown(f"""
         <div class="metric-card {card_class}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -132,7 +151,7 @@ if st.session_state.scanned_results is not None:
         </div>
         """, unsafe_allow_html=True)
 
-        # 🧮 CoinDCX Sync Calculator (BUG FIXED: Always visible now)
+        # 🧮 CoinDCX Sync Calculator (Always stays untouched and perfect)
         with st.expander(f"🧮 Calculator: Sync exact levels for {pair} on CoinDCX"):
             st.markdown("<div class='calc-box'>", unsafe_allow_html=True)
             
@@ -149,7 +168,7 @@ if st.session_state.scanned_results is not None:
                 st.error(f"📉 **COINDCX SHORT ENTRY SETTINGS:**\n\nTarget Price: **${round(exact_target, 2)}** | Stop-Loss Price: **${round(exact_sl, 2)}**")
             
             else:
-                st.warning(f"⏳ **MARKET SIDEWAYS:** Abhi {pair} range mein fasa hua hai. Koi bhi entry lena risky ho sakta hai, trend clear hone ka wait karein!")
+                st.warning(f"⏳ **MARKET ACCUMULATION:** Abhi {pair} range mein fasa hua hai. Koi bhi entry lena risky ho sakta hai, trend clear hone ka wait karein!")
             
             st.markdown("</div>", unsafe_allow_html=True)
                 

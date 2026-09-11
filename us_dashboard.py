@@ -76,11 +76,24 @@ if auto_refresh:
     )
 st.write("") 
 
-# STEP 1: Fetch Logic
+# STEP 1: Fetch Logic (Updated with ALL High-Volume Profitable Coins/Stocks from your screenshots)
 if scan_btn or st.session_state.scanned_results is None:
-    with st.spinner("Running Advanced Macro & Volume Engine..."):
+    with st.spinner("Scanning High-Volume Global Futures & Tech Giants..."):
         live_prices = get_futures_prices()
-        top_futures_pairs = ["NSDQ100", "S&P500", "SKHX", "SPCX", "SNDK", "MU", "DRAM", "SKHY", "SMSN"] 
+        
+        # 🚀 Saare High-Volume Profitable Pairs jo screenshots mein hain
+        top_futures_pairs = [
+            # Indices & Top Majors
+            "NSDQ100", "S&P500", "SKHX", "SPCX", "SNDK", "MU", "DRAM", "SKHY", "SMSN",
+            # Mega-Cap Tech & AI Giants
+            "MSFT", "TSLA", "AMZN", "AMD", "NVDA", "GOOGL", "META", "APPL",
+            # High Momentum & Trending Volatiles
+            "SOXL", "MSTR", "HOOD", "COIN", "PLTR", "SMCI", "ARM", "NFLX",
+            # Semiconductors & Hardware
+            "TSM", "AVGO", "QCOM", "AMAT", "MRVL", "ASML", "MU", "IBM",
+            # High Volume Stocks
+            "CRWD", "RDDT", "RIVN", "EBAY", "NET", "NOW", "SHOP", "UBER"
+        ]
         
         results = [] 
         for pair in top_futures_pairs:
@@ -156,7 +169,6 @@ if st.session_state.scanned_results is not None:
             if "BUY" in analysis['signal']:
                 exact_target = cdcx_input + analysis['target_points']
                 exact_sl = cdcx_input - analysis['sl_points']
-                exact_trail = cdcx_input + trail_sl_pts if trail_sl_pts > 0 else 0
                 st.success(f"📈 **COINDCX LONG ENTRY SETTINGS:**\n\nTarget: **${round(exact_target, 2)}** | Stop-Loss: **${round(exact_sl, 2)}** | Trail-SL Buffer: **{trail_sl_pts} Pts**")
             
             elif "SELL" in analysis['signal']:

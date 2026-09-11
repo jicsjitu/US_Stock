@@ -3,7 +3,7 @@ import time
 from fno_data import get_futures_prices, get_futures_candles
 from fno_strategy import analyze_futures
 
-st.set_page_config(page_title="CoinDCX Pro Futures", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Global Futures AI", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
@@ -19,7 +19,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ CoinDCX USDT Futures Scanner")
+st.title("⚡ Global Futures Scanner (CoinDCX Pairs)")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -27,53 +27,30 @@ with col1:
 with col2:
     filter_sig = st.selectbox("FILTER SIGNAL", ["All", "BUY TREND", "SELL TREND"])
 with col3:
-    auto_refresh = st.checkbox("Auto-Refresh (1 Min)", value=False)
+    auto_refresh = st.checkbox("Auto-Refresh (3 Min)", value=False)
 with col4:
     capital = st.number_input("CAPITAL REQ (USDT)", value=1000)
 
-if st.button("🚀 Scan Futures Market") or auto_refresh:
-    with st.spinner("Analyzing highly volatile futures data..."):
-        # 1. Fetch live prices ONLY for futures coins
+if st.button("🚀 Scan Global Markets") or auto_refresh:
+    with st.spinner("Analyzing Global Futures & Indices..."):
+        # 1. Fetch live prices directly from updated fno_data
         live_prices = get_futures_prices()
         
-        # 2. Top liquid futures coins select kiye hain (aap ise badha sakte ho)
-        # Top 50+ High Volume US Stocks (Tech, AI, EV & Bluechip)
+        # 2. Tumhare Screenshot wale exact Global Futures pairs
         top_futures_pairs = [
-            # 👑 The Magnificent Seven (Super High Volume)
-            "MSFT", "AAPL", "NVDA", "GOOGL", "META", "AMZN", "TSLA",
-
-            # 🤖 AI & Semiconductors (Current Hot Trend)
-            "AMD", "INTC", "TSM", "AVGO", "QCOM", "MU", "ARM", "SMCI", "PLTR",
-
-            # 🌐 Software, Cloud & Tech Giants
-            "ADBE", "CRM", "ORCL", "IBM", "CSCO", "NOW", "SNOW", "PANW", "CRWD",
-
-            # 🎬 Entertainment, Media & E-commerce
-            "NFLX", "DIS", "SPOT", "SHOP", "BABA", "PDD", "JD", "UBER", "ABNB",
-
-            # 💳 Fintech & Payments
-            "V", "MA", "PYPL", "SQ", "HOOD", "COIN",
-
-            # 💊 Healthcare & Biotech
-            "LLY", "NVO", "JNJ", "PFE", "MRNA",
-
-            # 🍔 Consumer, Retail & Auto (Non-EV)
-            "WMT", "COST", "MCD", "KO", "PEP", "F", "GM"
+            "NSDQ100", "S&P500", "SKHX", "SPCX", 
+            "SNDK", "MU", "DRAM", "SKHY", "SMSN"
         ] 
+        
+        stocks_found = 0
+
         for pair in top_futures_pairs:
-            current_price = 0.0
-            api_pair_name = pair 
-            
-            # Smart Matching: API ke data mein stock ka sahi naam dhundhna
-            for api_key in live_prices.keys():
-                if pair in api_key and ('USDT' in api_key or 'USD' in api_key):
-                    current_price = live_prices[api_key]
-                    api_pair_name = api_key
-                    break
+            # Ab humein koi loop lagakar match nahi karna, direct naam se price mil jayegi
+            current_price = live_prices.get(pair, 0.0)
             
             if current_price > 0:
-                # Candle data mangwana correct API pair name ke sath
-                df = get_futures_candles(api_pair_name, interval=timeframe)
+                stocks_found += 1
+                df = get_futures_candles(pair, interval=timeframe)
                 
                 if df is not None and not df.empty:
                     analysis = analyze_futures(df, current_price)
@@ -84,7 +61,7 @@ if st.button("🚀 Scan Futures Market") or auto_refresh:
                         st.markdown(f"""
                         <div class="metric-card">
                             <div style="display:flex; justify-content:space-between;">
-                                <div><small style="color:gray;">US STOCK</small><br><b>{pair}</b></div>
+                                <div><small style="color:gray;">GLOBAL ASSET</small><br><b>{pair}</b></div>
                                 <div><small style="color:gray;">LIVE PRICE</small><br><b>${current_price}</b></div>
                                 <div><small style="color:gray;">SIGNAL</small><br><span style="color:{color_hex};"><b>{analysis['signal']}</b></span></div>
                                 <div><small style="color:gray;">RSI</small><br><b>{analysis['rsi']}</b></div>
@@ -98,7 +75,10 @@ if st.button("🚀 Scan Futures Market") or auto_refresh:
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
+        
+        if stocks_found == 0:
+            st.error("⚠️ Data fetch nahi ho paya. Ek baar check karo ki fno_data.py mein yfinance theek se chal raha hai ya nahi.")
 
     if auto_refresh:
-        time.sleep(180)
+        time.sleep(180) # 3 Min safe refresh
         st.rerun()
